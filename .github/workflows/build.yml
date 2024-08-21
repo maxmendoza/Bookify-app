@@ -33,7 +33,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=tests/unit/  # Ejecuta las pruebas y mide la cobertura
+          pytest -cov=tests\unit  # Ejecuta las pruebas y mide la cobertura
           coverage xml -o coverage.xml  # Genera el reporte de cobertura en formato XML
 
       - name: SonarCloud Scan
