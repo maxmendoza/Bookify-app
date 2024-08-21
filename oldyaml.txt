@@ -1,0 +1,1081 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  exam9B
+
+  Sample SAM Template for exam9B
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaBasicExecution
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - secretsmanager:GetSecretValue
+                  - execute-api:Invoke
+                Resource: "*"
+
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: CognitoUserPool
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: True
+          RequireLowercase: True
+          RequireNumbers: True
+          RequireSymbols: True
+
+  LoginApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: LoginApi
+      Stagename: Dev
+
+  UserApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: UserApi
+      StageName: Dev
+
+  RolApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: RolApi
+      StageName: Dev
+
+  BookApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: BookApi
+      StageName: Dev
+
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /hello
+            Method: get
+
+  InsertRolAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: roles/insert_rol/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        InsertRol:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RolApi
+            Path: /insert_rol
+            Method: post
+
+  InsertRolAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt InsertRolAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  GetRolAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: roles/get_roles/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetRoles:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RolApi
+            Path: /getAll
+            Method: get
+
+  GetRolAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetRolAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  InsertUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/insert_user/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        InsertUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /insert_user
+            Method: post
+
+  InsertUserFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt InsertUserFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  UpdateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/update_user/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        UpdateUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /update_user
+            Method: put
+
+  UpdateUserFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt UpdateUserFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  GetUserAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/get_users/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetUsers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /getAll
+            Method: get
+
+  GetUserAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetUserAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  GetUserByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/get_userById/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetUserById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /get
+            Method: get
+
+  GetUserByIdFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetUserByIdFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  PatchStatusUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/status_user/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        PatchStatus:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /updateStatus
+            Method: patch
+
+  PatchStatusUserFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PatchStatusUserFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  CreateBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/create_book/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        CreateBook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /create_book
+            Method: post
+
+  CreateBookFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CreateBookFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  UpdateBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/update_book/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        UpdateBook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /update_book
+            Method: put
+
+  UpdateBookFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt UpdateBookFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  GetBookAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/get_books/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetBookAll:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /getAll
+            Method: get
+
+  GetBookAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetBookAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  GetBookByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/get_bookById/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetBookById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /getOne
+            Method: get
+
+  GetBookByIdFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetBookByIdFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  PatchBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/patch_book/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        PatchBookId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /patch_status
+            Method: patch
+
+  PatchBookFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PatchBookFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/login/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt
+
+Outputs:
+  HelloWorldFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt HelloWorldFunction.Arn
+
+  InsertRolAllFunction:
+    Description: "Insert Rol Lambda Function ARN"
+    Value: !GetAtt InsertRolAllFunction.Arn
+  InsertRolAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Insert Rol function"
+    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_rol/"
+
+  GetRolAllFunction:
+    Description: "Get Rol Lambda Function ARN"
+    Value: !GetAtt GetRolAllFunction.Arn
+  GetRolAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get Rol function"
+    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+
+  InsertUserFunction:
+    Description: "Insert User Lambda Function ARN"
+    Value: !GetAtt InsertUserFunction.Arn
+  InsertUserFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Insert User function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_user/"
+
+  UpdateUserFunction:
+    Description: "Update User Lambda Function ARN"
+    Value: !GetAtt UpdateUserFunction.Arn
+  UpdateUserFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Update User function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_user/"
+
+  GetUserAllFunction:
+    Description: "Get User Lambda Function ARN"
+    Value: !GetAtt GetUserAllFunction.Arn
+  GetUserAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get User function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+
+  GetUserByIdFunction:
+    Description: "Get User By Id Lambda Function ARN"
+    Value: !GetAtt GetUserByIdFunction.Arn
+  GetUserByIdFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get User By Id function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
+
+  PatchStatusUserFunction:
+    Description: "Patch Status User Lambda Function ARN"
+    Value: !GetAtt PatchStatusUserFunction.Arn
+  PatchStatusUserFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Patch Status User function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/updateStatus/"
+
+  CreateBookFunction:
+    Description: "Create Book Lambda Function ARN"
+    Value: !GetAtt CreateBookFunction.Arn
+  CreateBookFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Create Book function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/create_book/"
+
+  UpdateBookFunction:
+    Description: "Update Book Lambda Function ARN"
+    Value: !GetAtt UpdateBookFunction.Arn
+  UpdateBookFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Update Book function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book/"
+
+  PatchBookFunction:
+    Description: "Patch Book Lambda Function ARN"
+    Value: !GetAtt PatchBookFunction.Arn
+  PatchBookFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Patch Book function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book_status/"
+
+  GetBookAllFunction:
+    Description: "Get All Books Lambda Function ARN"
+    Value: !GetAtt GetBookAllFunction.Arn
+  GetBookAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get All Books function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+
+  GetBookByIdFunction:
+    Description: "Get Book By ID Lambda Function ARN"
+    Value: !GetAtt GetBookByIdFunction.Arn
+  GetBookByIdFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get Book By ID function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
+
+
+
+
+//////////////////////////////
+
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  exam9B
+
+  Sample SAM Template for exam9B
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaBasicExecution
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - secretsmanager:GetSecretValue
+                  - execute-api:Invoke
+                Resource: "*"
+        - PolicyName: LambdaCognitoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminInitiateAuth
+                  - cognito-idp:AdminRespondToAuthChallenge
+                  - cognito-idp:ForgotPassword
+                  - cognito-idp:ConfirmForgotPassword
+                  - cognito-idp:ChangePassword
+                Resource: '*'
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: CognitoUserPool
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: Bookify_Pool
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+
+  LoginApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Dev
+
+  UserApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: UserApi
+      StageName: Dev
+
+  RolApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: RolApi
+      StageName: Dev
+
+  BookApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: BookApi
+      StageName: Dev
+
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /hello
+            Method: get
+            RestApiId: !Ref LoginApi
+
+  ForgotPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/forgot_password/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+          USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+      Events:
+        ForgotPasswordApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LoginApi
+            Path: /forgot_password
+            Method: post
+
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/login/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+          USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+      Events:
+        LoginApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LoginApi
+            Path: /login
+            Method: post
+
+  ChangePasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/change_password/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+          USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+      Events:
+        ChangePasswordApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LoginApi
+            Path: /change_password
+            Method: post
+
+  InsertRolAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: roles/insert_rol/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        InsertRol:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RolApi
+            Path: /insert_rol
+            Method: post
+
+  InsertRolAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt InsertRolAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RolApi}/*/*"
+
+  GetRolAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: roles/get_roles/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetRoles:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RolApi
+            Path: /getAll
+            Method: get
+
+  GetRolAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetRolAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RolApi}/*/*"
+
+  CreateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/insert_user/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        InsertUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /insert_user
+            Method: post
+
+  CreateUserFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CreateUserFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${UserApi}/*/*"
+
+  UpdateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/update_user/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        UpdateUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /update_user
+            Method: put
+
+  UpdateUserFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt UpdateUserFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${UserApi}/*/*"
+
+  GetUserAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/get_users/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetUsers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /getAll
+            Method: get
+
+  GetUserAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetUserAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${UserApi}/*/*"
+
+  GetUserByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/get_userById/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetUserById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /get
+            Method: get
+
+  GetUserByIdFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetUserByIdFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${UserApi}/*/*"
+
+  PatchStatusUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/status_user/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        PatchStatus:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /updateStatus
+            Method: patch
+
+  PatchStatusUserFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PatchStatusUserFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${UserApi}/*/*"
+
+  CreateBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/create_book/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        CreateBook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /create_book
+            Method: post
+
+  CreateBookFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CreateBookFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${BookApi}/*/*"
+
+  UpdateBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/update_book/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        UpdateBook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /update_book
+            Method: put
+
+  UpdateBookFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt UpdateBookFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${BookApi}/*/*"
+
+  GetBookAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/get_books/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetBookAll:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /getAll
+            Method: get
+
+  GetBookAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetBookAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${BookApi}/*/*"
+
+  GetBookByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/get_bookById/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetBookById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /getOne
+            Method: get
+
+  GetBookByIdFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetBookByIdFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${BookApi}/*/*"
+
+  PatchBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/patch_book/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        PatchBookId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /patch_status
+            Method: patch
+
+  PatchBookFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PatchBookFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${BookApi}/*/*"
+
+Outputs:
+  HelloWorldFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt HelloWorldFunction.Arn
+
+  InsertRolAllFunction:
+    Description: "Insert Rol Lambda Function ARN"
+    Value: !GetAtt InsertRolAllFunction.Arn
+
+  InsertRolAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Insert Rol function"
+    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/insert_rol/"
+
+  GetRolAllFunction:
+    Description: "Get Rol Lambda Function ARN"
+    Value: !GetAtt GetRolAllFunction.Arn
+
+  GetRolAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get Rol function"
+    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/getAll/"
+
+  CreateUserFunction:
+    Description: "Insert User Lambda Function ARN"
+    Value: !GetAtt CreateUserFunction.Arn
+
+  CreateUserFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Insert User function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/insert_user/"
+
+  UpdateUserFunction:
+    Description: "Update User Lambda Function ARN"
+    Value: !GetAtt UpdateUserFunction.Arn
+
+  UpdateUserFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Update User function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/update_user/"
+
+  GetUserAllFunction:
+    Description: "Get User Lambda Function ARN"
+    Value: !GetAtt GetUserAllFunction.Arn
+
+  GetUserAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get User function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/getAll/"
+
+  GetUserByIdFunction:
+    Description: "Get User By Id Lambda Function ARN"
+    Value: !GetAtt GetUserByIdFunction.Arn
+
+  GetUserByIdFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get User By Id function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/get/"
+
+  PatchStatusUserFunction:
+    Description: "Patch Status User Lambda Function ARN"
+    Value: !GetAtt PatchStatusUserFunction.Arn
+
+  PatchStatusUserFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Patch Status User function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/updateStatus/"
+
+  CreateBookFunction:
+    Description: "Create Book Lambda Function ARN"
+    Value: !GetAtt CreateBookFunction.Arn
+
+  CreateBookFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Create Book function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/create_book/"
+
+  UpdateBookFunction:
+    Description: "Update Book Lambda Function ARN"
+    Value: !GetAtt UpdateBookFunction.Arn
+
+  UpdateBookFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Update Book function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/update_book/"
+
+  PatchBookFunction:
+    Description: "Patch Book Lambda Function ARN"
+    Value: !GetAtt PatchBookFunction.Arn
+
+  PatchBookFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Patch Book function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/update_book_status/"
+
+  GetBookAllFunction:
+    Description: "Get All Books Lambda Function ARN"
+    Value: !GetAtt GetBookAllFunction.Arn
+
+  GetBookAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get All Books function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/getAll/"
+
+  GetBookByIdFunction:
+    Description: "Get Book By ID Lambda Function ARN"
+    Value: !GetAtt GetBookByIdFunction.Arn
+
+  GetBookByIdFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get Book By ID function"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/get/"
+
+  LoginFunction:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt LoginFunction.Arn
+
+  LoginFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Login function"
+    Value: !Sub "https://${LoginApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/login/"
+
+  ForgotPasswordFunction:
+    Description: "API Gateway endpoint URL for Forgot Password function"
+    Value: !Sub "https://${LoginApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/forgot_password"
+
+  ChangePasswordFunction:
+    Description: "API Gateway endpoint URL for Change Password function"
+    Value: !Sub "https://${LoginApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/change_password"
+
+  CognitoUserPoolId:
+    Description: "Cognito User Pool ID"
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: "CognitoUserPoolId"
+
+  CognitoUserPoolClientId:
+    Description: "Cognito User Pool Client ID"
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: "CognitoUserPoolClientId"
+
+
+
