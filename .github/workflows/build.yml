@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r tests/requirements.txt  # Ajustado para que encuentre el archivo en /tests/
+          pip install -r requeriments.txt  # Ajustado para que encuentre el archivo en /tests/
           pip install pytest coverage  # Asegúrate de que coverage y pytest estén instalados
 
       - name: Run tests with coverage
