@@ -33,7 +33,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          coverage run -m pytest  # Ejecuta las pruebas y mide la cobertura
+          pytest --cov=tests/unit/  # Ejecuta las pruebas y mide la cobertura
           coverage xml -o coverage.xml  # Genera el reporte de cobertura en formato XML
 
       - name: SonarCloud Scan
@@ -41,6 +41,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          AWS_SAM_STACK_NAME: bookify-app
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         with:
           args: >
             -Dsonar.python.coverage.reportPaths=coverage.xml  # Informa a SonarCloud dónde está el reporte de cobertura
